@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLP-1 Menu — Swiggy MCP Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #FAFAF7; --surface: #FFFFFF; --border: #E8E6DF;
+    --text: #1A1916; --muted: #7A7870;
+    --orange: #FC8019; --orange-light: #FFF3EB;
+    --green: #1A7F4E; --green-light: #EAF7EF;
+    --amber: #B45309; --amber-light: #FFF8EB;
+    --red: #B91C1C; --red-light: #FEF2F2;
+    --radius: 12px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 2rem; display: flex; align-items: center;
+    justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 32px; height: 32px; background: var(--orange); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .logo-text { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; }
+  .logo-text span { color: var(--orange); }
+  .badge { font-size: 11px; font-weight: 500; background: var(--orange-light); color: var(--orange); padding: 3px 8px; border-radius: 20px; border: 1px solid #FDDCBC; }
+
+  .mode-toggle { display: flex; align-items: center; gap: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px 6px 6px; cursor: pointer; transition: all 0.2s; user-select: none; }
+  .mode-toggle:hover { border-color: #C5C2BB; }
+  .mode-toggle.active { background: var(--green-light); border-color: #A3D9BC; }
+  .toggle-dot { width: 28px; height: 28px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .mode-toggle.active .toggle-dot { background: var(--green); }
+  .toggle-label { font-size: 13px; font-weight: 500; color: var(--muted); }
+  .mode-toggle.active .toggle-label { color: var(--green); }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  .restaurant-header { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; }
+  .restaurant-img { width: 64px; height: 64px; border-radius: 10px; background: linear-gradient(135deg, #FF8C42, #FC8019); display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+  .restaurant-info h1 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .restaurant-meta { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
+  .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border); }
+
+  .glp1-banner { background: var(--green-light); border: 1px solid #A3D9BC; border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: none; align-items: flex-start; gap: 10px; animation: slideDown 0.3s ease; }
+  .glp1-banner.visible { display: flex; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+  .banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .banner-text h3 { font-size: 14px; font-weight: 500; color: var(--green); margin-bottom: 2px; }
+  .banner-text p { font-size: 13px; color: #2D7A55; line-height: 1.5; }
+
+  .section-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; padding-left: 2px; }
+  .sort-banner { display: none; align-items: center; gap: 8px; font-size: 13px; color: var(--green); margin-bottom: 10px; font-weight: 500; }
+  .sort-banner.visible { display: flex; }
+
+  .menu-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 2rem; }
+
+  .menu-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.25rem; display: flex; align-items: flex-start; gap: 1rem; transition: border 0.3s ease; }
+  .menu-card.glp-good { border-left: 3px solid var(--green); }
+  .menu-card.glp-moderate { border-left: 3px solid #D97706; }
+  .menu-card.glp-avoid { border-left: 3px solid var(--red); }
+
+  .dish-emoji { font-size: 36px; flex-shrink: 0; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; background: var(--bg); border-radius: 10px; border: 1px solid var(--border); }
+  .dish-info { flex: 1; min-width: 0; }
+  .dish-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+  .dish-name { font-size: 15px; font-weight: 500; line-height: 1.3; }
+  .dish-price { font-size: 15px; font-weight: 500; flex-shrink: 0; }
+  .dish-desc { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 6px; }
+  .dish-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 4px; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+  .tag-veg { background: #EAF7EF; color: var(--green); border: 1px solid #A3D9BC; }
+  .tag-protein { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+  .tag-carb { background: var(--amber-light); color: var(--amber); border: 1px solid #FCD34D; }
+  .tag-fat { background: var(--red-light); color: var(--red); border: 1px solid #FCA5A5; }
+
+  .glp1-analysis { margin-top: 8px; padding: 8px 10px; border-radius: 8px; font-size: 12.5px; line-height: 1.5; display: none; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .glp1-analysis.good { background: var(--green-light); color: #1A5C3A; display: block; }
+  .glp1-analysis.moderate { background: var(--amber-light); color: #78350F; display: block; }
+  .glp1-analysis.avoid { background: var(--red-light); color: #7F1D1D; display: block; }
+  .glp1-analysis.loading { background: var(--bg); color: var(--muted); display: block; border: 1px solid var(--border); }
+
+  .analysis-header { font-weight: 500; margin-bottom: 2px; }
+
+  .glp1-score { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; margin-top: 2px; }
+  .glp1-score.good { background: var(--green-light); color: var(--green); border: 1.5px solid #A3D9BC; display: flex; }
+  .glp1-score.moderate { background: var(--amber-light); color: var(--amber); border: 1.5px solid #FCD34D; display: flex; }
+  .glp1-score.avoid { background: var(--red-light); color: var(--red); border: 1.5px solid #FCA5A5; display: flex; }
+
+  .shimmer { background: linear-gradient(90deg, var(--bg) 25%, var(--border) 50%, var(--bg) 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 4px; height: 12px; }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  .footer-note { text-align: center; font-size: 12px; color: var(--muted); margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); line-height: 1.6; }
+  .footer-note strong { color: var(--text); }
+  .powered { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; font-size: 11px; color: var(--muted); }
+  .powered-dot { width: 14px; height: 14px; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 8px; color: white; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🍽</div>
+    <div class="logo-text">GLP<span>-1</span> Menu</div>
+    <span class="badge">Swiggy MCP Demo</span>
+  </div>
+  <div class="mode-toggle" id="toggle" onclick="toggleGLP1Mode()">
+    <div class="toggle-dot">💊</div>
+    <span class="toggle-label" id="toggleLabel">GLP-1 Mode Off</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="restaurant-header">
+    <div class="restaurant-img">🍛</div>
+    <div class="restaurant-info">
+      <h1>Punjab Da Dhaba</h1>
+      <div class="restaurant-meta">
+        <span>⭐ 4.3</span>
+        <div class="dot"></div>
+        <span>30–40 min</span>
+        <div class="dot"></div>
+        <span>North Indian</span>
+        <div class="dot"></div>
+        <span>₹200 for one</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="glp1-banner" id="glp1Banner">
+    <div class="banner-icon">✅</div>
+    <div class="banner-text">
+      <h3>GLP-1 Mode active</h3>
+      <p>Menu re-ranked based on GLP-1 nutritional criteria — high protein, low glycemic index, small portions. Dishes rated Good, Moderate, or Avoid.</p>
+    </div>
+  </div>
+
+  <div class="sort-banner" id="sortBanner">↕ Menu re-ranked — best GLP-1 choices shown first</div>
+  <div class="section-label" id="sectionLabel">Full menu</div>
+  <div class="menu-grid" id="menuGrid"></div>
+
+  <div class="footer-note">
+    <strong>GLP-1 Menu</strong> — built on Swiggy's MCP platform<br>
+    Nutritional classification is informational. Always consult your doctor or dietitian.
+  </div>
+  <div class="powered">
+    <div class="powered-dot" style="background:#FC8019;">S</div>
+    Powered by Swiggy MCP
+  </div>
+
+</div>
+
+<script>
+// ── DISH DATA ──────────────────────────────────────────────────────────────────
+const dishes = [
+  { id:1,  name:"Dal Makhani",            desc:"Slow-cooked black lentils simmered overnight in butter and cream",              price:"₹220", emoji:"🫘", tags:["veg","protein","carb"] },
+  { id:2,  name:"Butter Chicken",         desc:"Tender chicken in a rich tomato-based creamy sauce",                            price:"₹320", emoji:"🍗", tags:["protein"] },
+  { id:3,  name:"Paneer Tikka",           desc:"Grilled cottage cheese marinated in spiced yoghurt",                            price:"₹260", emoji:"🧀", tags:["veg","protein"] },
+  { id:4,  name:"Butter Naan",            desc:"Soft leavened flatbread baked in tandoor, brushed with butter",                 price:"₹60",  emoji:"🫓", tags:["carb"] },
+  { id:5,  name:"Chicken Biryani",        desc:"Fragrant basmati rice layered with spiced chicken and fried onions",            price:"₹350", emoji:"🍚", tags:["protein","carb"] },
+  { id:6,  name:"Tandoori Chicken (Half)",desc:"Chicken leg marinated in yoghurt and spices, roasted in tandoor",               price:"₹280", emoji:"🍖", tags:["protein"] },
+  { id:7,  name:"Gulab Jamun (2 pcs)",    desc:"Soft milk-solid dumplings soaked in rose-flavoured sugar syrup",                price:"₹80",  emoji:"🍬", tags:["carb","fat"] },
+  { id:8,  name:"Masala Chai",            desc:"Spiced Indian milk tea with ginger, cardamom, and cinnamon",                    price:"₹40",  emoji:"☕", tags:["carb"] },
+  { id:9,  name:"Palak Paneer",           desc:"Cottage cheese cubes in spiced spinach gravy",                                  price:"₹240", emoji:"🌿", tags:["veg","protein"] },
+  { id:10, name:"Raita",                  desc:"Yoghurt with cucumber, mint, and a pinch of roasted cumin",                     price:"₹60",  emoji:"🥛", tags:["veg","protein"] },
+];
+
+// ── GLP-1 CLASSIFIER (runs locally, zero API calls) ───────────────────────────
+// Based on published GLP-1 dietary guidelines:
+// - Prioritise: high protein, low GI, small portions, slow-digesting foods
+// - Avoid: high sugar, refined carbs, large portions (trigger nausea)
+const GLP1_DATA = {
+  1:  { rating:"moderate", reason:"Lentils are good protein but overnight butter/cream raises saturated fat — eat half a portion." },
+  2:  { rating:"moderate", reason:"High-protein chicken is ideal but the creamy sauce is calorie-dense — portion carefully." },
+  3:  { rating:"good",     reason:"High protein, low-GI, grilled not fried — one of the best choices on this menu." },
+  4:  { rating:"avoid",    reason:"Refined white flour has a high GI that spikes blood sugar quickly — skip or limit to one piece." },
+  5:  { rating:"avoid",    reason:"Large portion of high-GI basmati rice risks nausea and glucose spike on GLP-1 therapy." },
+  6:  { rating:"good",     reason:"Lean, high protein, low-GI, dry-cooked — excellent GLP-1 choice with no heavy sauce." },
+  7:  { rating:"avoid",    reason:"Sugar syrup causes a rapid glucose spike — strongly avoid while on GLP-1 medication." },
+  8:  { rating:"moderate", reason:"Low calorie but milky chai with sugar raises GI — ask for unsweetened if possible." },
+  9:  { rating:"good",     reason:"Spinach adds fibre, paneer adds protein — slow-digesting and easy on the stomach." },
+  10: { rating:"good",     reason:"Probiotic-rich, low-GI, small portion — a great gut-friendly side on GLP-1 therapy." },
+};
+
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let glp1Active = false;
+let revealed = {};   // tracks which cards have been revealed
+let currentOrder = dishes.map((_, i) => i);
+
+// ── RENDER ─────────────────────────────────────────────────────────────────────
+function renderMenu(order) {
+  const grid = document.getElementById('menuGrid');
+  grid.innerHTML = '';
+  order.forEach(i => {
+    const d = dishes[i];
+    const tagHTML = d.tags.map(t => `<span class="tag tag-${t}">${t}</span>`).join('');
+    const r = revealed[d.id];
+    let analysisHTML = '';
+    let scoreHTML = '';
+    let cardClass = '';
+
+    if (glp1Active) {
+      if (!r) {
+        analysisHTML = `<div class="glp1-analysis loading" id="analysis-${d.id}">
+          <div class="shimmer" style="width:50%;margin-bottom:6px;"></div>
+          <div class="shimmer" style="width:82%;"></div>
+        </div>`;
+      } else {
+        const cls = r.rating;
+        const label = cls==='good' ? '✓ Good choice' : cls==='moderate' ? '~ Moderate' : '✕ Avoid';
+        const icon  = cls==='good' ? '✓' : cls==='moderate' ? '~' : '✕';
+        scoreHTML    = `<div class="glp1-score ${cls}">${icon}</div>`;
+        analysisHTML = `<div class="glp1-analysis ${cls}"><div class="analysis-header">${label}</div>${r.reason}</div>`;
+        cardClass    = `glp-${cls}`;
+      }
+    }
+
+    grid.innerHTML += `
+      <div class="menu-card ${cardClass}" id="card-${d.id}">
+        <div class="dish-emoji">${d.emoji}</div>
+        <div class="dish-info">
+          <div class="dish-top">
+            <div class="dish-name">${d.name}</div>
+            <div class="dish-price">${d.price}</div>
+          </div>
+          <div class="dish-desc">${d.desc}</div>
+          <div class="dish-tags">${tagHTML}</div>
+          ${analysisHTML}
+        </div>
+        ${scoreHTML}
+      </div>`;
+  });
+}
+
+// ── STAGGERED REVEAL (simulates live AI analysis feel) ────────────────────────
+function runAnalysis() {
+  dishes.forEach((dish, idx) => {
+    setTimeout(() => {
+      revealed[dish.id] = GLP1_DATA[dish.id];
+      updateCard(dish.id, revealed[dish.id]);
+      if (idx === dishes.length - 1) setTimeout(sortAndRender, 350);
+    }, 180 + idx * 130);
+  });
+}
+
+function updateCard(id, data) {
+  const el = document.getElementById(`analysis-${id}`);
+  if (!el) return;
+  const cls   = data.rating;
+  const label = cls==='good' ? '✓ Good choice' : cls==='moderate' ? '~ Moderate' : '✕ Avoid';
+  const icon  = cls==='good' ? '✓' : cls==='moderate' ? '~' : '✕';
+  el.className = `glp1-analysis ${cls}`;
+  el.innerHTML = `<div class="analysis-header">${label}</div>${data.reason}`;
+
+  const card = document.getElementById(`card-${id}`);
+  if (card) {
+    card.className = `menu-card glp-${cls}`;
+    if (!card.querySelector('.glp1-score')) {
+      const score = document.createElement('div');
+      score.className = `glp1-score ${cls}`;
+      score.textContent = icon;
+      card.appendChild(score);
+    }
+  }
+}
+
+function sortAndRender() {
+  const rank = { good:0, moderate:1, avoid:2 };
+  currentOrder = [...Array(dishes.length).keys()].sort((a,b) => {
+    return (rank[revealed[dishes[a].id]?.rating] ?? 1) - (rank[revealed[dishes[b].id]?.rating] ?? 1);
+  });
+  renderMenu(currentOrder);
+  document.getElementById('sortBanner').classList.add('visible');
+  document.getElementById('sectionLabel').textContent = 'Re-ranked for GLP-1';
+}
+
+// ── TOGGLE ─────────────────────────────────────────────────────────────────────
+function toggleGLP1Mode() {
+  glp1Active = !glp1Active;
+  document.getElementById('toggle').classList.toggle('active', glp1Active);
+  document.getElementById('toggleLabel').textContent = glp1Active ? 'GLP-1 Mode On' : 'GLP-1 Mode Off';
+  document.getElementById('glp1Banner').classList.toggle('visible', glp1Active);
+
+  if (glp1Active) {
+    revealed = {};
+    renderMenu(currentOrder);
+    runAnalysis();
+  } else {
+    document.getElementById('sortBanner').classList.remove('visible');
+    document.getElementById('sectionLabel').textContent = 'Full menu';
+    currentOrder = dishes.map((_, i) => i);
+    renderMenu(currentOrder);
+  }
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────────
+renderMenu(currentOrder);
+</script>
+</body>
+</html>
